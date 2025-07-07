@@ -2,10 +2,10 @@
 // File: register_process.php
 
 // Database connection details
-$host = "localhost";  // Database host
-$dbname = "survey_link";  // Database name
-$username = "root";  // Database username
-$password = "";  // Database password (replace with your actual password)
+$host = "localhost";
+$dbname = "survey_link";
+$username = "root";
+$password = "";
 
 // Create database connection
 $conn = new mysqli($host, $username, $password, $dbname);
@@ -16,6 +16,7 @@ if ($conn->connect_error) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Retrieve form fields
     $first_name     = trim($_POST['first_name']);
     $last_name      = trim($_POST['last_name']);
     $middle_name    = trim($_POST['middle_name'] ?? '');
@@ -39,10 +40,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         die("Invalid mobile number.");
     }
 
+    // Check if the email already exists in the database
+    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
+        die("Error: This email is already registered.");
+    }
+    $stmt->close();
+
     // Hash password
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
-    // Insert user
+    // Insert user (without the username column)
     $stmt = $conn->prepare("INSERT INTO users 
         (first_name, last_name, middle_name, sex, civil_status, email, mobile_number, password) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
@@ -59,7 +71,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     );
 
     if ($stmt->execute()) {
-        echo "Registration successful. <a href='login_page.php'>Login here</a>";
+        // Store success message in the session and redirect back to the signup page
+        session_start();
+        $_SESSION['success_message'] = "Registration successful. Please log in.";
+        header("Location: signup_page.php");  // Redirect to signup page with success message
     } else {
         echo "Error: " . $stmt->error;
     }

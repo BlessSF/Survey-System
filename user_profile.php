@@ -1,24 +1,26 @@
 <?php
-// Start the session to access user information
+// Start session and check user role
 session_start();
 
-// Check if the user is logged in, otherwise redirect to the login page
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login_page.php");  // Redirect to login page if not logged in
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'citizen') {
+    header("Location: login_page.php");
     exit();
 }
 
-// User data from session
-$user_id = $_SESSION['user_id'];
-$first_name = $_SESSION['first_name'];
-$last_name = $_SESSION['last_name'];
-$role = $_SESSION['role'];
-$email = $_SESSION['email'];
-$status = $_SESSION['status'];
-$middle_name = isset($_SESSION['middle_name']) ? $_SESSION['middle_name'] : 'Not provided';
-$sex = isset($_SESSION['sex']) ? $_SESSION['sex'] : 'Not provided';
-$civil_status = isset($_SESSION['civil_status']) ? $_SESSION['civil_status'] : 'Not provided';
-$mobile_number = isset($_SESSION['mobile_number']) ? $_SESSION['mobile_number'] : 'Not provided';
+$citizen_id = $_SESSION['user_id'];  // Get the citizen ID
+
+// Database connection
+$conn = new mysqli('localhost', 'root', '', 'survey_link');
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Fetch citizen details
+$sql = "SELECT * FROM users WHERE user_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $citizen_id);
+$stmt->execute();
+$citizen = $stmt->get_result()->fetch_assoc();
 ?>
 
 <!DOCTYPE html>
@@ -26,32 +28,79 @@ $mobile_number = isset($_SESSION['mobile_number']) ? $_SESSION['mobile_number'] 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile</title>
-    <link rel="stylesheet" href="css/front_page.css">
+    <title>Citizen Profile</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="container">
-    <h2>User Profile</h2>
+    <h2>Your Profile</h2>
+    <form method="POST" action="update_profile.php">
+        <div class="form-group">
+            <label for="first_name">First Name:</label>
+            <input type="text" name="first_name" value="<?php echo htmlspecialchars($citizen['first_name']); ?>" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="middle_name">Middle Name:</label>
+            <input type="text" name="middle_name" value="<?php echo htmlspecialchars($citizen['middle_name']); ?>">
+        </div>
 
-    <div class="profile-info">
-        <p><strong>First Name:</strong> <?php echo htmlspecialchars($first_name); ?></p>
-        <p><strong>Middle Name:</strong> <?php echo htmlspecialchars($middle_name); ?></p>
-        <p><strong>Last Name:</strong> <?php echo htmlspecialchars($last_name); ?></p>
-        <p><strong>Role:</strong> <?php echo ucfirst($role); ?></p>
-        <p><strong>Email:</strong> <?php echo htmlspecialchars($email); ?></p>
-        <p><strong>Status:</strong> <?php echo ucfirst($status); ?></p>
-        <p><strong>Sex:</strong> <?php echo ucfirst($sex); ?></p>
-        <p><strong>Civil Status:</strong> <?php echo ucfirst($civil_status); ?></p>
-        <p><strong>Mobile Number:</strong> <?php echo htmlspecialchars($mobile_number); ?></p>
-    </div>
+        <div class="form-group">
+            <label for="last_name">Last Name:</label>
+            <input type="text" name="last_name" value="<?php echo htmlspecialchars($citizen['last_name']); ?>" required>
+        </div>
 
-    <!-- Go to Form Button -->
-    <a href="form_page.php" class="button">Go to Form</a>
+        <div class="form-group">
+            <label for="sex">Sex:</label>
+            <select name="sex">
+                <option value="Male" <?php echo $citizen['sex'] == 'Male' ? 'selected' : ''; ?>>Male</option>
+                <option value="Female" <?php echo $citizen['sex'] == 'Female' ? 'selected' : ''; ?>>Female</option>
+            </select>
+        </div>
 
-    <!-- Logout Button -->
-    <a href="logout.php" class="button">Logout</a>
+        <div class="form-group">
+            <label for="civil_status">Civil Status:</label>
+            <select name="civil_status">
+                <option value="Single" <?php echo $citizen['civil_status'] == 'Single' ? 'selected' : ''; ?>>Single</option>
+                <option value="Married" <?php echo $citizen['civil_status'] == 'Married' ? 'selected' : ''; ?>>Married</option>
+                <option value="Divorced" <?php echo $citizen['civil_status'] == 'Divorced' ? 'selected' : ''; ?>>Divorced</option>
+                <option value="Widowed" <?php echo $citizen['civil_status'] == 'Widowed' ? 'selected' : ''; ?>>Widowed</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="mobile_number">Mobile Number:</label>
+            <input type="text" name="mobile_number" value="<?php echo htmlspecialchars($citizen['mobile_number']); ?>" required>
+        </div>
+
+        <div class="form-group">
+            <label for="status">Status:</label>
+            <input type="text" name="status" value="<?php echo htmlspecialchars($citizen['status']); ?>" disabled>
+        </div>
+
+        <div class="form-group">
+            <label for="created_at">Created At:</label>
+            <input type="text" name="created_at" value="<?php echo htmlspecialchars($citizen['created_at']); ?>" disabled>
+        </div>
+
+        <div class="form-group">
+            <label for="updated_at">Updated At:</label>
+            <input type="text" name="updated_at" value="<?php echo htmlspecialchars($citizen['updated_at']); ?>" disabled>
+        </div>
+
+        <div class="form-group">
+            <input type="submit" class="button" value="Update Profile">
+        </div>
+    </form>
+
+    <a href="citizen_dashboard.php" class="button">Back to Dashboard</a>
 </div>
 
 </body>
 </html>
+
+<?php
+// Close the database connection
+$conn->close();
+?>

@@ -1,16 +1,22 @@
 <?php
-// File: signup_page.php
+// Start session to check for success message
+session_start();
 ?>
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
-    <link rel="stylesheet" type="text/css" href="css\login_register.css">
+    <link rel="stylesheet" href="css/login_register.css">
 </head>
 <body>
+
 <div class="register-container">
     <h2>Create Account</h2>
     <form action="register_process.php" method="POST">
+        <!-- Form Fields -->
         <div class="form-group">
             <label for="last_name">Last Name</label>
             <input type="text" name="last_name" required>
@@ -60,7 +66,17 @@
         </div>
         <input type="submit" value="Register">
     </form>
+
     <p>Already have an account? <a href="login_page.php">Login here</a></p>
 </div>
+
+<!-- Floating Success Message -->
+<?php if (isset($_SESSION['success_message'])): ?>
+    <div class="success-message">
+        <?php echo $_SESSION['success_message']; ?>
+    </div>
+    <?php unset($_SESSION['success_message']); ?>
+<?php endif; ?>
+
 </body>
 </html>

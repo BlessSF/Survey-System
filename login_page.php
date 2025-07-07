@@ -1,6 +1,3 @@
-<?php
-// File: login_page.php
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,8 +26,10 @@
     </form>
 
     <p>Don't have an account? <a href="signup_page.php">Sign Up</a></p>
+
+    <!-- Back to Home Button -->
+    <a href="index.php" class="button">Back to Home</a>
 </div>
 
 </body>
 </html>
-

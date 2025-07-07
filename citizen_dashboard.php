@@ -2,7 +2,7 @@
 // Start session and check user role
 session_start();
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'barangay_official') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'citizen') {
     header("Location: login_page.php");
     exit();
 }
@@ -16,8 +16,11 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch surveys created by the Barangay Official
-$sql = "SELECT * FROM surveys WHERE barangay_official_id = ?";
+// Fetch surveys assigned to the citizen
+$sql = "SELECT s.id, s.title, s.description, s.created_at
+        FROM surveys s
+        JOIN survey_assignments sa ON s.id = sa.survey_id
+        WHERE sa.citizen_id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $_SESSION['user_id']);
 $stmt->execute();
@@ -29,18 +32,18 @@ $result = $stmt->get_result();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barangay Official Dashboard</title>
+    <title>Citizen Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="container">
-    <h2>Welcome, Barangay Official</h2>
+    <h2>Welcome, Citizen</h2>
     <p>Hi, <?php echo htmlspecialchars($first_name) . " " . htmlspecialchars($last_name); ?>!</p>
     
+    <!-- Buttons for profile and log out -->
     <div class="dashboard-actions">
-        <a href="create_survey.php" class="button">Create Survey</a>
-        <a href="assign_survey.php" class="button">Assign Survey to Citizens</a>  <!-- Link to Assign Survey -->
+        <a href="user_profile.php" class="button">View Profile</a>  <!-- View Profile Button -->
         <a href="logout.php" class="button">Log Out</a>  <!-- Log Out Button -->
     </div>
 
@@ -62,22 +65,15 @@ $result = $stmt->get_result();
                         <td><?php echo htmlspecialchars($row['description']); ?></td>
                         <td><?php echo htmlspecialchars($row['created_at']); ?></td>
                         <td>
-                            <a href="edit_survey.php?id=<?php echo $row['id']; ?>" class="button">Edit</a>
-                            <a href="delete_survey.php?id=<?php echo $row['id']; ?>" class="button">Delete</a>
-                            <a href="view_responses.php?survey_id=<?php echo $row['id']; ?>" class="button">View Responses</a>  <!-- Link to View Responses -->
+                            <a href="survey_form_user.php?survey_id=<?php echo $row['id']; ?>" class="button">Fill Out Survey</a>
                         </td>
                     </tr>
                 <?php endwhile; ?>
             </tbody>
         </table>
     <?php else: ?>
-        <p>No surveys created yet. Click on "Create Survey" to get started.</p>
+        <p>No surveys assigned yet. Please wait for your assigned surveys.</p>
     <?php endif; ?>
-
-    <!-- Back Button -->
-    <div class="back-button-container">
-        <a href="index.php" class="button">Back to Home</a>
-    </div>
 </div>
 
 </body>
